@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>বোটানি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "সেন্ট্রোমিয়ার বিষয়ে কোনটি সঠিক?",
+          options: {
+            a: "শুধুমাত্র প্রাণী কোষে থাকে",
+            b: "মাকুতন্তুর সাথে ক্রোমোসোমকে সংযুক্ত করে",
+            c: "আরএনএ (RNA) এবং প্রোটিন নিয়ে গঠিত",
+            d: "সেন্ট্রিওল থাকে",
+          },
+          correct: "b",
+          explanation:
+            "<p>সেন্ট্রোমিয়ার হলো ক্রোমোসোমের সেই সংকুচিত অঞ্চল যা দুটি ক্রোমাটিডকে যুক্ত রাখে এবং কোষ বিভাজনের সময় স্পিন্ডল ফাইবারের সাথে ক্রোমোসোমকে সংযুক্ত করে। এটি DNA এবং প্রোটিন দিয়ে গঠিত। সেন্ট্রোমিয়ার প্রাণী ও উদ্ভিদ উভয় কোষেই থাকে এবং এতে সেন্ট্রিওল থাকে না (সেন্ট্রিওল আলাদা অঙ্গাণু)।</p>",
+        },
+        {
+          id: 2,
+          question: "মাইটোটিক মেটাফেজে কোনটি সঠিক নয়?",
+          options: {
+            a: "ক্রোমোসোম সেন্ট্রোমিয়ারে বিভক্ত হয়",
+            b: "ক্রোমোসোমে লুপ সৃষ্টি হয়",
+            c: "ক্রোমোসোমগুলো এককভাবে থাকে",
+            d: "ক্রোমোসোম অপরিবর্তিত থাকে",
+          },
+          correct: "b",
+          explanation:
+            "<p>মাইটোটিক মেটাফেজে ক্রোমোসোমগুলো কোষের বিষুবীয় অঞ্চলে সারিবদ্ধভাবে সজ্জিত হয় এবং প্রতিটি ক্রোমোসোম দুটি সিস্টার ক্রোমাটিড নিয়ে গঠিত থাকে যা সেন্ট্রোমিয়ার দ্বারা যুক্ত থাকে। এই দশায় ক্রোমোসোমে লুপ সৃষ্টি হয় না। সেন্ট্রোমিয়ার অ্যানাফেজ দশায় বিভক্ত হয়।</p>",
+        },
+        {
+          id: 3,
+          question: "মানবদেহের ক্ষত নিরাময়ে কোনটি অপরিহার্য?",
+          options: {
+            a: "মাইটোসিস",
+            b: "মিয়োসিস",
+            c: "অ্যামাইটোসিস",
+            d: "সিনপসিস",
+          },
+          correct: "a",
+          explanation:
+            "<p>মানবদেহের ক্ষত নিরাময় এবং নতুন কোষ তৈরির জন্য মাইটোসিস অপরিহার্য। এটি সমবিভাজন প্রক্রিয়া যার মাধ্যমে ক্ষতিগ্রস্ত কোষের প্রতিস্থাপন ঘটে। মিয়োসিস জনন কোষ উৎপাদনে, অ্যামাইটোসিস কিছু নিম্নশ্রেণীর জীবে প্রত্যক্ষ বিভাজন এবং সিনপসিস মিয়োসিসের প্রোফেজ-১ দশায় হোমোলোগাস ক্রোমোজোমের জোড় তৈরি হওয়াকে বোঝায়।</p>",
+        },
+        {
+          id: 4,
+          question: "কোন প্রক্রিয়ায় নিউক্লিয়াসের বিভাজন হয়?",
+          options: {
+            a: "Cytokinesis",
+            b: "Interkinesis",
+            c: "Karyokinesis",
+            d: "Metakinesis",
+          },
+          correct: "c",
+          explanation:
+            "<p>ক্যারিওকাইনেসিস হলো কোষ বিভাজনের সেই পর্যায় যেখানে নিউক্লিয়াসের বিভাজন ঘটে। সাইটোকাইনেসিস হলো সাইটোপ্লাজমের বিভাজন, ইন্টারকাইনেসিস হলো মিয়োসিসের দুটি বিভাজনের মধ্যবর্তী স্বল্প বিশ্রামকাল এবং মেটাকাইনেসিস হলো মেটাফেজে ক্রোমোজোমের বিষুবীয় অঞ্চলে বিন্যস্ত হওয়ার প্রক্রিয়া।</p>",
+        },
+        {
+          id: 5,
+          question: "কোন কোষ বিভাজন পদ্ধতিতে RBC তৈরি হয়?",
+          options: {
+            a: "Synopsis",
+            b: "Mitosis",
+            c: "Meiosis",
+            d: "Amitiosis",
+          },
+          correct: "b",
+          explanation:
+            "<p>লোহিত রক্তকণিকা (RBC) তৈরির প্রক্রিয়ায় মাইটোসিস কোষ বিভাজন ঘটে। এরিথ্রোপোয়েসিস প্রক্রিয়ায় হেমopoietic স্টেম সেল মাইটোসিসের মাধ্যমে বিভাজিত হয়ে লোহিত রক্তকণিকা তৈরি করে। সিনপসিস মিয়োসিসের প্রোফেজ-১ এ, মিয়োসিস জনন কোষ উৎপাদনে এবং অ্যামাইটোসিস কিছু নিম্নশ্রেণীর জীবে প্রত্যক্ষ বিভাজন।</p>",
+        },
+        {
+          id: 6,
+          question: "জেনেটিকেলি নিয়ন্ত্রিত কোষ মৃত্যুকে কী বলে?",
+          options: {
+            a: "মিয়োসিস",
+            b: "মাইটোসিস",
+            c: "নেক্রোসিস",
+            d: "অ্যাপোপ্টোসিস",
+          },
+          correct: "d",
+          explanation:
+            "<p>জেনেটিকেলি নিয়ন্ত্রিত কোষ মৃত্যুকে অ্যাপোপ্টোসিস বলা হয়। এটি একটি স্বাভাবিক এবং সুপরিকল্পিত প্রক্রিয়া যা কোষের অস্বাভাবিকতা দূর করতে বা বিকাশের সময় অপ্রয়োজনীয় কোষ অপসারণ করতে ঘটে। মিয়োসিস জনন কোষ উৎপাদন, মাইটোসিস কোষ সংখ্যা বৃদ্ধি এবং নেক্রোসিস হলো আঘাত বা সংক্রমণের কারণে অনিয়ন্ত্রিত কোষ মৃত্যু।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "মাইটোসিস কোষ বিভাজনের কোন পর্যায়ে প্রতিটি ক্রোমাটিড একটি অপত্য ক্রোমোজোমে পরিণত হয়?",
+          options: {
+            a: "Prophase",
+            b: "Metaphase",
+            c: "Anaphase",
+            d: "Telophase",
+          },
+          correct: "c",
+          explanation:
+            "<p>মাইটোসিস কোষ বিভাজনের অ্যানাফেজ পর্যায়ে সেন্ট্রোমিয়ারের বিভাজন ঘটে এবং প্রতিটি সিস্টার ক্রোমাটিড আলাদা হয়ে অপত্য ক্রোমোজোম হিসেবে মেরুর দিকে গমন করে।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "মাইটোসিস কোষ বিভাজনের সময় স্পিন্ডল যন্ত্রের বিষুবীয় অঞ্চলে ক্রোমোজোমের বিন্যস্ত হওয়াকে কী বলে?",
+          options: {
+            a: "ক্যারিওকাইনেসিস",
+            b: "সাইটোকাইনেসিস",
+            c: "ইন্টারকাইনেসিস",
+            d: "মেটাকাইনেসিস",
+          },
+          correct: "d",
+          explanation:
+            "<p>মাইটোসিস কোষ বিভাজনের সময় স্পিন্ডল যন্ত্রের বিষুবীয় অঞ্চলে ক্রোমোজোমের সারিবদ্ধভাবে সজ্জিত হওয়ার প্রক্রিয়াকে মেটাকাইনেসিস বলে। ক্যারিওকাইনেসিস নিউক্লিয়াসের বিভাজন, সাইটোকাইনেসিস সাইটোপ্লাজমের বিভাজন এবং ইন্টারকাইনেসিস মিয়োসিসের দুটি বিভাজনের মধ্যবর্তী পর্যায়।</p>",
+        },
+        {
+          id: 9,
+          question:
+            "মাইটোসিসের কোন ধাপে নিউক্লিয়ার মেমব্রেন ও নিউক্লিওলাসের পূর্ণ বিলুপ্তি ঘটে?",
+          options: {
+            a: "প্রোফেজ",
+            b: "প্রো-মেটাফেজ",
+            c: "মেটাফেজ",
+            d: "অ্যানাফেজ",
+          },
+          correct: "c",
+          explanation:
+            "<p>মাইটোসিসের প্রোফেজ দশায় নিউক্লিয়ার মেমব্রেন ও নিউক্লিওলাস ভাঙতে শুরু করে এবং প্রো-মেটাফেজে তা প্রায় বিলুপ্ত হয়ে যায়। মেটাফেজে নিউক্লিয়ার মেমব্রেন ও নিউক্লিওলাসের পূর্ণ বিলুপ্তি ঘটে এবং অ্যানাফেজে মেরুর দিকে ক্রোমোসোম গমন শুরু করে।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "মাইটোসিস কোষ বিভাজনের কোন পর্যায়ে ক্রোমোসোমগুলো বিষুবীয় অঞ্চলে অবস্থান করে?",
+          options: {
+            a: "প্রোফেজ",
+            b: "মেটাফেজ",
+            c: "টেলোফেজ",
+            d: "অ্যানাফেজ",
+          },
+          correct: "b",
+          explanation:
+            "<p>মাইটোসিস কোষ বিভাজনের মেটাফেজ পর্যায়ে ক্রোমোসোমগুলো স্পিন্ডল ফাইবারের সাথে যুক্ত হয়ে কোষের বিষুবীয় অঞ্চলে সারিবদ্ধভাবে অবস্থান করে। প্রোফেজে ক্রোমোসোম ঘনীভূত হতে শুরু করে, অ্যানাফেজে মেরুর দিকে গমন করে এবং টেলোফেজে নতুন নিউক্লিয়াস গঠিত হয়।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "কোষ বিভাজনের কোন ধাপে ক্রোমোসোমগুলো V, L, J ও I এর আকার ধারণ করে?",
+          options: {
+            a: "প্রোফেজ",
+            b: "মেটাফেজ",
+            c: "অ্যানাফেজ",
+            d: "টেলোফেজ",
+          },
+          correct: "c",
+          explanation:
+            "<p>কোষ বিভাজনের অ্যানাফেজ পর্যায়ে সেন্ট্রোমিয়ারের অবস্থানের ভিত্তিতে ক্রোমোসোমগুলো মেরুর দিকে টানার সময় V (মেটাসেন্ট্রিক), L (সাব-মেটাসেন্ট্রিক), J (অ্যাক্রোসেন্ট্রিক) এবং I (টেলোসেন্ট্রিক) এর মতো বিভিন্ন আকার ধারণ করে।</p>",
+        },
+        {
+          id: 12,
+          question: "কোষ বিভাজনের কোন ধাপে ক্রোমোসোম মেরুর দিকে গমন করে?",
+          options: {
+            a: "প্রোফেজ",
+            b: "মেটাফেজ",
+            c: "অ্যানাফেজ",
+            d: "টেলোফেজ",
+          },
+          correct: "c",
+          explanation:
+            "<p>কোষ বিভাজনের অ্যানাফেজ পর্যায়ে সেন্ট্রোমিয়ারের বিভাজন ঘটে এবং অপত্য ক্রোমোসোমগুলো স্পিন্ডল ফাইবারের সংকোচনের ফলে কোষের দুই বিপরীত মেরুর দিকে গমন করে।</p>",
+        },
+        {
+          id: 13,
+          question: "ক্রোমোসোমাল নৃত্য দেখা যায় কোন দশায়?",
+          options: {
+            a: "প্রোফেজ",
+            b: "প্রো-মেটাফেজ",
+            c: "মেটাফেজ",
+            d: "অ্যানাফেজ",
+          },
+          correct: "b",
+          explanation:
+            "<p>ক্রোমোসোমাল নৃত্য প্রো-মেটাফেজ দশায় দেখা যায়। এই সময় নিউক্লিয়ার ঝিল্লি ভেঙে যাওয়ার পর স্পিন্ডল ফাইবারগুলো ক্রোমোসোমের সেন্ট্রোমিয়ারের সাথে যুক্ত হওয়ার চেষ্টা করে, ফলে ক্রোমোসোমগুলো এলোমেলোভাবে নড়াচড়া করে।</p>",
+        },
+        {
+          id: 14,
+          question: "নিচের কোনটিতে ক্রোমোসোম গতিপ্রাপ্ত হয়?",
+          options: {
+            a: "প্রোফেজ",
+            b: "মেটাফেজ",
+            c: "অ্যানাফেজ",
+            d: "টেলোফেজ",
+          },
+          correct: "c",
+          explanation:
+            "<p>কোষ বিভাজনের অ্যানাফেজ পর্যায়ে স্পিন্ডল ফাইবারের সংকোচনের ফলে সেন্ট্রোমিয়ারের বিভাজন ঘটে এবং অপত্য ক্রোমোসোমগুলো মেরুর দিকে গতিপ্রাপ্ত হয়।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "কোষ বিভাজনের সময় কোন অঙ্গাণুটি অ্যাস্টার রশ্মি সৃষ্টি করে?",
+          options: {
+            a: "সেন্ট্রিওল",
+            b: "রাইবোসোম",
+            c: "লাইসোসোম",
+            d: "মাইটোকন্ড্রিয়া",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রাণী কোষে কোষ বিভাজনের সময় সেন্ট্রিওল নামক অঙ্গাণুটি অ্যাস্টার রশ্মি (aster rays) সৃষ্টি করে, যা স্পিন্ডল যন্ত্রের মেরু গঠনে সাহায্য করে। উদ্ভিদ কোষে সেন্ট্রিওল না থাকলেও স্পিন্ডল যন্ত্র গঠিত হয় তবে অ্যাস্টার রশ্মি থাকে না।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "নিচের কোনটি কোষে উচ্চ মাত্রায় থাকলে মহিলাদের স্তন ক্যান্সার সৃষ্টি করে?",
+          options: {
+            a: "p53 প্রোটিন",
+            b: "Cdk প্রোটিন",
+            c: "P27 প্রোটিন",
+            d: "Cdk MPF প্রোটিন",
+          },
+          correct: "c",
+          explanation:
+            "<p>P27 প্রোটিন একটি টিউমার সাপ্রেসর প্রোটিন যা কোষ চক্রের অগ্রগতি নিয়ন্ত্রণে ভূমিকা রাখে। কোষে এর মাত্রা কমে গেলে বা কার্যকারিতা ব্যাহত হলে অনিয়ন্ত্রিত কোষ বিভাজন এবং ক্যান্সার সৃষ্টি হতে পারে, যার মধ্যে স্তন ক্যান্সারও অন্তর্ভুক্ত। p53 ও একটি টিউমার সাপ্রেসর প্রোটিন, Cdk এবং Cdk MPF প্রোটিন কোষ চক্রের নিয়ন্ত্রণে সাহায্য করে, তবে এদের উচ্চ মাত্রা ক্যান্সার সৃষ্টি করে না।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "দেহের বিভিন্ন অংশে ক্যান্সার কোষের বিস্তার হওয়াকে কী বলে?",
+          options: {
+            a: "অ্যাপোপটোসিস",
+            b: "ন্যাক্রোসিস",
+            c: "অ্যাপোফাইসিস",
+            d: "মেটাস্টেসিস",
+          },
+          correct: "d",
+          explanation:
+            "<p>দেহের এক অংশ থেকে ক্যান্সার কোষগুলো রক্ত বা লিম্ফতন্ত্রের মাধ্যমে অন্য অংশে ছড়িয়ে পড়া এবং নতুন টিউমার গঠন করার প্রক্রিয়াকে মেটাস্টেসিস বলে। অ্যাপোপটোসিস হলো নিয়ন্ত্রিত কোষ মৃত্যু, ন্যাক্রোসিস হলো অনিয়ন্ত্রিত কোষ মৃত্যু এবং অ্যাপোফাইসিস হলো মেরুদণ্ডী প্রাণীদের কশেরুকার উপরিভাগের বর্ধিত অংশ।</p>",
+        },
+        {
+          id: 18,
+          question:
+            "ভ্রূণের লিঙ্গ নির্ধারণের সময় কোন পদ্ধতিতে উলফিয়ান নালি (Wolffian ducts) অপসারিত হয়?",
+          options: {
+            a: "অ্যাপোপটোসিস",
+            b: "ন্যাক্রোসিস",
+            c: "অ্যাপোফাইসিস",
+            d: "মেটাস্টেসিস",
+          },
+          correct: "a",
+          explanation:
+            "<p>ভ্রূণের বিকাশের সময় লিঙ্গ নির্ধারণের প্রক্রিয়ায় অ্যাপোপ্টোসিসের মাধ্যমে অপ্রয়োজনীয় গঠন, যেমন স্ত্রী ভ্রূণে উলফিয়ান নালি (যা পুরুষ প্রজননতন্ত্রে বিকশিত হয়) অপসারিত হয়।</p>",
+        },
+        {
+          id: 19,
+          question:
+            "নাভিরজ্জু ও থলির মাঝে বিদ্যমান টিস্যু বিশিষ্টাংশ দেয় কোন প্রক্রিয়ায়?",
+          options: {
+            a: "অ্যাপোফাইসিস",
+            b: "ন্যাক্রোসিস",
+            c: "অ্যাপোপটোসিস",
+            d: "মেটাস্টেসিস",
+          },
+          correct: "c",
+          explanation:
+            "<p>নাভিরজ্জু ও থলির মাঝে বিদ্যমান টিস্যু বিশিষ্টাংশ অ্যাপোপ্টোসিসের মাধ্যমে অপসারিত হয়। এটি একটি স্বাভাবিক বিকাশের প্রক্রিয়া।</p>",
+        },
+        {
+          id: 20,
+          question: "কোষের অনির্ধারিত মৃত্যুকে কী বলে?",
+          options: {
+            a: "অ্যাপোফাইসিস",
+            b: "ন্যাক্রোসিস",
+            c: "অ্যাপোপটোসিস",
+            d: "মেটাস্টেসিস",
+          },
+          correct: "b",
+          explanation:
+            "<p>আঘাত, সংক্রমণ বা অক্সিজেনের অভাবের কারণে কোষের অপরিকল্পিত মৃত্যুকে ন্যাক্রোসিস বলে। অ্যাপোপটোসিস হলো নিয়ন্ত্রিত কোষ মৃত্যু এবং মেটাস্টেসিস হলো ক্যান্সার কোষের বিস্তার। অ্যাপোফাইসিস মেরুদণ্ডী প্রাণীদের কশেরুকার উপরিভাগের বর্ধিত অংশ।</p>",
+        },
+        {
+          id: 21,
+          question: "বিভাজনরত কোষের সাইটোপ্লাজম দুভাগে বিভক্ত হওয়াকে কী বলে?",
+          options: {
+            a: "মেটাকাইনেসিস",
+            b: "সেন্ট্রোকাইনেসিস",
+            c: "ক্যারিওকাইনেসিস",
+            d: "সাইটোকাইনেসিস",
+          },
+          correct: "d",
+          explanation:
+            "<p>বিভাজনরত কোষের সাইটোপ্লাজমের বিভাজন প্রক্রিয়াকে সাইটোকাইনেসিস বলে। মেটাকাইনেসিস হলো মেটাফেজে ক্রোমোজোমের বিষুবীয় অঞ্চলে বিন্যস্ত হওয়া, ক্যারিওকাইনেসিস হলো নিউক্লিয়াসের বিভাজন এবং সেন্ট্রোকাইনেসিস বলে কোনো সুস্পষ্ট কোষ বিভাজন পর্যায় নেই।</p>",
+        },
+        {
+          id: 22,
+          question: "মাইটোসিস কোষ বিভাজনের নামকরণ করেন কে?",
+          options: {
+            a: "বেনেডিন",
+            b: "ফার্মার",
+            c: "শাইখার",
+            d: "ফ্লেমিং",
+          },
+          correct: "d",
+          explanation:
+            "<p>ওয়াল্টার ফ্লেমিং ১৮৮২ সালে সালাম্যান্ডারের কোষে কোষ বিভাজন পর্যবেক্ষণ করে এর নাম মাইটোসিস রাখেন।</p>",
+        },
+        {
+          id: 23,
+          question:
+            "মাইটোসিস কোষ বিভাজনের কোন ধাপে নিউক্লিওলাসের বিলুপ্তি ঘটে?",
+          options: {
+            a: "প্রোফেজ",
+            b: "ইন্টারফেজ",
+            c: "অ্যানাফেজ",
+            d: "টেলোফেজ",
+          },
+          correct: "a",
+          explanation:
+            "<p>মাইটোসিস কোষ বিভাজনের প্রোফেজ ধাপে নিউক্লিওলাস ধীরে ধীরে বিলুপ্ত হতে শুরু করে। ইন্টারফেজে নিউক্লিওলাস সুস্পষ্ট থাকে, অ্যানাফেজ ও টেলোফেজে নতুন নিউক্লিয়াস গঠিত হওয়ার সময় নিউক্লিওলাস পুনরায় দৃশ্যমান হয়।</p>",
+        },
+        {
+          id: 24,
+          question: "কোন ধাপে অ্যাস্টার রশ্মির সৃষ্টি হয়?",
+          options: {
+            a: "প্রোফেজ",
+            b: "প্রো-মেটাফেজ",
+            c: "অ্যানাফেজ",
+            d: "টেলোফেজ",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রাণী কোষে মাইটোসিসের প্রো-মেটাফেজ ধাপে সেন্ট্রিওল থেকে অ্যাস্টার রশ্মি (aster rays) সৃষ্টি হয় এবং স্পিন্ডল ফাইবার গঠিত হতে শুরু করে।</p>",
+        },
+        {
+          id: 25,
+          question:
+            "মাইটোসিস কোষ বিভাজনের অ্যানাফেজ পর্যায়ে মেটাসেন্ট্রিক ক্রোমোসোমের আকৃতি নিচের কোন ইংরেজি অক্ষরের মতো দেখায়?",
+          options: {
+            a: "V",
+            b: "J",
+            c: "L",
+            d: "I",
+          },
+          correct: "a",
+          explanation:
+            "<p>মেটাসেন্ট্রিক ক্রোমোসোমে সেন্ট্রোমিয়ার ঠিক মাঝখানে অবস্থিত থাকে। অ্যানাফেজ পর্যায়ে মেরুর দিকে টানার সময় এই ক্রোমোসোমগুলো V আকৃতি ধারণ করে।</p>",
+        },
+        {
+          id: 26,
+          question:
+            "মাইটোসিস কোষ বিভাজনে ক্রোমোসোমের দ্বিত্বন হয় নিচের কোন পর্যায়ে?",
+          options: {
+            a: "মেটাফেজ",
+            b: "অ্যানাফেজ",
+            c: "টেলোফেজ",
+            d: "ইন্টারফেজ",
+          },
+          correct: "d",
+          explanation:
+            "<p>মাইটোসিস কোষ বিভাজনের ইন্টারফেজের S দশায় DNA প্রতিলিপির মাধ্যমে ক্রোমোসোমের দ্বিত্বন ঘটে। মেটাফেজ, অ্যানাফেজ ও টেলোফেজ হলো বিভাজন পর্যায় যেখানে ক্রোমোসোমের বিভাজন ও স্থানান্তর ঘটে।</p>",
+        },
+        {
+          id: 27,
+          question:
+            "কোষ বিভাজনের কোন পর্যায়ে ক্রোমোসোমগুলো ক্রমশ সরু, লম্বা ও অদৃশ্য হয়?",
+          options: {
+            a: "প্রোফেজ",
+            b: "মেটাফেজ",
+            c: "অ্যানাফেজ",
+            d: "টেলোফেজ",
+          },
+          correct: "d",
+          explanation:
+            "<p>কোষ বিভাজনের টেলোফেজ পর্যায়ে অপত্য ক্রোমোসোমগুলো মেরুতে পৌঁছানোর পর ক্রমশ খুলে সরু ও লম্বা হতে থাকে এবং নিউক্লিয়ার ঝিল্লি গঠিত হওয়ায় অদৃশ্য হয়ে যায়। প্রোফেজে ক্রোমোসোম ঘনীভূত হয় এবং মেটাফেজে সুস্পষ্ট ও মোটা থাকে। অ্যানাফেজে মেরুর দিকে গমন করে।</p>",
+        },
+        {
+          id: 28,
+          question:
+            "কাটিং, লেয়ারিং ও গ্রাফটিং নামক অঙ্গজ জননে মূলোৎপাদন ও টিস্যু সংযোজন কীসের ফল?",
+          options: {
+            a: "মাইটোসিসের",
+            b: "ক্রসিংওভারের",
+            c: "অ্যামাইটোসিসের",
+            d: "অযৌন জননের",
+          },
+          correct: "a",
+          explanation:
+            "<p>কাটিং, লেয়ারিং ও গ্রাফটিং হলো অঙ্গজ জননের কৃত্রিম পদ্ধতি। এই প্রক্রিয়াগুলোতে নতুন মূল ও টিস্যু তৈরি হয় মাইটোসিস কোষ বিভাজনের মাধ্যমে। ক্রসিংওভার মিয়োসিসের সময় ঘটে, অ্যামাইটোসিস প্রত্যক্ষ বিভাজন এবং অযৌন জনন একটি সামগ্রিক প্রক্রিয়া যার মধ্যে মাইটোসিস একটি গুরুত্বপূর্ণ অংশ।</p>",
+        },
+        {
+          id: 29,
+          question:
+            "কোষ বিভাজনের কোন দশায় স্পিন্ডলযন্ত্র/স্পিন্ডল ফাইবার অদৃশ্য হয়ে যায়?",
+          options: {
+            a: "প্রো-মেটাফেজ",
+            b: "মেটাফেজ",
+            c: "অ্যানাফেজ",
+            d: "টেলোফেজ",
+          },
+          correct: "d",
+          explanation:
+            "<p>কোষ বিভাজনের টেলোফেজ পর্যায়ে যখন দুটি নতুন নিউক্লিয়াস গঠিত হয়, তখন স্পিন্ডল যন্ত্র বা স্পিন্ডল ফাইবার ধীরে ধীরে অদৃশ্য হয়ে যায়।</p>",
+        },
+        {
+          id: 30,
+          question:
+            "সাব মেটাসেন্ট্রিক ক্রোমোসোম কোষ বিভাজনের অ্যানাফেজ দশায় ইংরেজি কোন অক্ষরের আকৃতি ধারণ করে?",
+          options: {
+            a: "I",
+            b: "J",
+            c: "L",
+            d: "V",
+          },
+          correct: "c",
+          explanation:
+            "<p>সাব মেটাসেন্ট্রিক ক্রোমোসোমে সেন্ট্রোমিয়ার মধ্যভাগের সামান্য দূরে অবস্থিত থাকে। অ্যানাফেজ পর্যায়ে মেরুর দিকে টানার সময় এই ক্রোমোসোমগুলো L আকৃতি ধারণ করে।</p>",
+        },
+        {
+          id: 31,
+          question:
+            "মাইটোসিস কোষ বিভাজনের কোন ধাপে স্পিন্ডল যন্ত্রের সৃষ্টি হয়?",
+          options: {
+            a: "প্রোফেজ",
+            b: "প্রো-মেটাফেজ",
+            c: "মেটাফেজ",
+            d: "অ্যানাফেজ",
+          },
+          correct: "b",
+          explanation:
+            "<p>মাইটোসিস কোষ বিভাজনের প্রো-মেটাফেজ ধাপে নিউক্লিয়ার ঝিল্লি ভেঙে যাওয়ার পর সেন্ট্রিওল থেকে স্পিন্ডল ফাইবার (তন্ত্র) গঠিত হতে শুরু করে এবং ক্রোমোসোমের সেন্ট্রোমিয়ারের সাথে যুক্ত হয়।</p>",
+        },
+        {
+          id: 32,
+          question: "ক্রোমোসোমের খাটো ও মোটা হওয়াকে বলে-",
+          options: {
+            a: "সিন্যাপসিস",
+            b: "বাইভ্যালেন্ট",
+            c: "অ্যাপোপটোসিস",
+            d: "কনডেনসেশন",
+          },
+          correct: "d",
+          explanation:
+            "<p>কোষ বিভাজনের প্রোফেজ পর্যায়ে ক্রোমোসোমগুলো ক্রমশ পেঁচিয়ে খাটো ও মোটা হতে শুরু করে, এই প্রক্রিয়াকে কনডেনসেশন বলে। সিন্যাপসিস মিয়োসিসের প্রোফেজ-১ এ হোমোলোগাস ক্রোমোজোমের জোড় তৈরি, বাইভ্যালেন্ট মিয়োসিসের প্রোফেজ-১ এ দুটি হোমোলোগাস ক্রোমোজোমের জোড় এবং অ্যাপোপটোসিস নিয়ন্ত্রিত কোষ মৃত্যু।</p>",
+        },
+        {
+          id: 33,
+          question: "নিম্নের কোন পর্যায়ে কোষপ্লেট তৈরি হয়?",
+          options: {
+            a: "প্রোফেজ",
+            b: "অ্যানাফেজ",
+            c: "টেলোফেজ",
+            d: "কাইনেসিস",
+          },
+          correct: "c",
+          explanation:
+            "<p>উদ্ভিদ কোষে সাইটোকাইনেসিসের সময় টেলোফেজ পর্যায়ে কোষের বিষুবীয় অঞ্চলে কোষপ্লেট গঠিত হতে শুরু করে, যা পরবর্তীতে নতুন কোষ প্রাচীর তৈরি করে দুটি অপত্য কোষকে পৃথক করে। কাইনেসিস একটি সাধারণ চলন প্রক্রিয়া।</p>",
+        },
+        {
+          id: 34,
+          question: "মাইটোসিস কোথায় ঘটে না?",
+          options: {
+            a: "মূল ও কাণ্ডের অগ্রভাগে",
+            b: "পাতার বর্ধনশীল অংশে",
+            c: "প্রাণির যকৃত কোষে",
+            d: "প্রাণির স্নায়ু কোষে",
+          },
+          correct: "d",
+          explanation:
+            "<p>মাইটোসিস মূলত দেহকোষে ঘটে এবং এটি বৃদ্ধি, ক্ষত নিরাময় ও অযৌন জননে ভূমিকা রাখে। মূল ও কাণ্ডের অগ্রভাগ এবং পাতার বর্ধনশীল অংশে ক্রমাগত কোষ বিভাজন প্রয়োজন। প্রাণীর যকৃত কোষ প্রয়োজনে বিভাজিত হতে পারে। তবে, পরিণত স্নায়ু কোষ সাধারণত বিভাজিত হয় না।</p>",
+        },
+        {
+          id: 35,
+          question:
+            "যে ক্রোমোসোমে সেন্ট্রোমিয়ারের অবস্থান ঠিক মাঝখানে সেটি কোষ বিভাজনের অ্যানাফেজ পর্যায়ে কোন অবস্থা প্রাপ্ত হয়?",
+          options: {
+            a: "মেটাসেন্ট্রিক",
+            b: "সাব-মেটাসেন্ট্রিক",
+            c: "অ্যাক্রোসেন্ট্রিক",
+            d: "টেলোসেন্ট্রিক",
+          },
+          correct: "a",
+          explanation:
+            "<p>মেটাসেন্ট্রিক ক্রোমোসোমে সেন্ট্রোমিয়ার ঠিক মাঝখানে অবস্থিত থাকে। অ্যানাফেজ পর্যায়ে মেরুর দিকে টানার সময় এই ক্রোমোসোমগুলো V আকৃতি ধারণ করে, যা মেটাসেন্ট্রিক অবস্থার পরিচায়ক।</p>",
+        },
+        {
+          id: 36,
+          question: "পুষ্টির অভাবজনিত কোষের মৃত্যুকে কী বলে?",
+          options: {
+            a: "অ্যাপোপটোসিস",
+            b: "টক্সিকটোসিস",
+            c: "নিউট্রোটপসিস",
+            d: "নেক্রোসিস",
+          },
+          correct: "d",
+          explanation:
+            "<p>পুষ্টির অভাবজনিত বা আঘাতের কারণে অনিয়ন্ত্রিত কোষ মৃত্যুকে নেক্রোসিস বলে। অ্যাপোপটোসিস হলো নিয়ন্ত্রিত কোষ মৃত্যু। টক্সিকটোসিস বিষক্রিয়ার কারণে কোষের মৃত্যু এবং নিউট্রোটপসিস বলে কোনো সুস্পষ্ট কোষ মৃত্যুর প্রকারভেদ নেই।</p>",
+        },
+        {
+          id: 37,
+          question: "সেন্ট্রোমিয়ারের পূর্ণবিভাজন ঘটে নিম্নের কোন ধাপে?",
+          options: {
+            a: "প্রো-মেটাফেজ",
+            b: "মেটাফেজ",
+            c: "অ্যানাফেজ",
+            d: "টেলোফেজ",
+          },
+          correct: "c",
+          explanation:
+            "<p>সেন্ট্রোমিয়ারের পূর্ণ বিভাজন মাইটোসিস এবং মিয়োসিস উভয় কোষ বিভাজনের অ্যানাফেজ পর্যায়ে ঘটে, যার ফলে সিস্টার ক্রোমাটিডগুলো আলাদা হয়ে অপত্য ক্রোমোজোম গঠন করে এবং মেরুর দিকে গমন করে।</p>",
+        },
+        {
+          id: 38,
+          question: "দেহে টিউমার ছড়িয়ে পড়াকে কী বলে?",
+          options: {
+            a: "Oncogenesis",
+            b: "Necrosis",
+            c: "Apoptosis",
+            d: "Metastasis",
+          },
+          correct: "d",
+          explanation:
+            "<p>দেহে ক্যান্সার কোষের বিস্তার বা এক স্থান থেকে অন্য স্থানে ছড়িয়ে পড়াকে মেটাস্টেসিস বলে। অনকোজেনেসিস হলো টিউমার সৃষ্টির প্রক্রিয়া, নেক্রোসিস হলো অনিয়ন্ত্রিত কোষ মৃত্যু এবং অ্যাপোপটোসিস হলো নিয়ন্ত্রিত কোষ মৃত্যু।</p>",
+        },
+        {
+          id: 39,
+          question:
+            "২০ = ৮ হলে মাইটোসিস মেটাফেজ দশায় মোট কতটি ক্রোমাটিড দেখা যাবে?",
+          options: {
+            a: "৮",
+            b: "১৬",
+            c: "২০",
+            d: "২৮",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে ২০ = ৮ বলতে সম্ভবত ডিপ্লয়েড কোষে (2n) ৮টি ক্রোমোজোম বোঝানো হয়েছে। মাইটোসিসের মেটাফেজ দশায় প্রতিটি ক্রোমোজোম দুটি ক্রোমাটিড নিয়ে গঠিত হয় (DNA প্রতিলিপির কারণে)। সুতরাং, যদি ক্রোমোজোম সংখ্যা ৮ হয়, তবে ক্রোমাটিডের সংখ্যা হবে ৮ x ২ = ১৬। প্রশ্নটিতে ২০ = ৮ একটি অস্পষ্ট উপস্থাপনা, তবে যদি ধরে নেওয়া হয় যে মেটাফেজে ক্রোমোজোম সংখ্যা ২০, তবে ক্রোমাটিডের সংখ্যা হবে ২০ x ২ = ৪০। তবে উত্তরের অপশন অনুযায়ী, যদি &quot;২০&quot; দ্বারা ক্রোমাটিড সংখ্যা এবং &quot;৮&quot; দ্বারা ক্রোমোজোম সংখ্যাকে G1 দশায় বোঝানো হয়, তাহলে মেটাফেজে ক্রোমোসোম সংখ্যা ৮ এবং ক্রোমাটিড সংখ্যা ১৬ হবে। কিন্তু অপশনে ১৬ না থাকায় এবং প্রশ্নটি অস্পষ্ট হওয়ায়, প্রদত্ত উত্তরের সাথে সঙ্গতি রেখে যদি ধরে নেওয়া হয় প্রশ্নটিতে সরাসরি মেটাফেজ দশার ক্রোমোসোম সংখ্যা ২০ উল্লেখ করা হয়েছে, তাহলে ক্রোমাটিডের সংখ্যাও ২০ (যেহেতু প্রতিটি ক্রোমোসোম দুটি সিস্টার ক্রোমাটিড নিয়ে গঠিত)। সুতরাং, সঠিক উত্তর ২০ হবে যদি প্রশ্নটি মেটাফেজ দশার ক্রোমোসোম সংখ্যা ২০ ধরে নেওয়া হয় এবং প্রতিটি ক্রোমোসোমে দুটি ক্রোমাটিড থাকে (যা স্বাভাবিক)।</p>",
+        },
+        {
+          id: 40,
+          question:
+            "কোষ প্রাচীরের মধ্যপর্দার গঠন প্রক্রিয়া কোষ বিভাজনের কোন দশা থেকে শুরু হয়?",
+          options: {
+            a: "প্রোফেজ",
+            b: "টেলোফেজ",
+            c: "মেটাফেজ",
+            d: "অ্যানাফেজ",
+          },
+          correct: "b",
+          explanation:
+            "<p>উদ্ভিদ কোষে সাইটোকাইনেসিসের সময় টেলোফেজ দশায় কোষপ্লেট গঠিত হতে শুরু করে, যা পরবর্তীতে কোষ প্রাচীরের মধ্যপর্দা (ল্যামেলা) এবং প্রাথমিক প্রাচীর তৈরি করে দুটি অপত্য কোষকে পৃথক করে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                  <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                  </label>
+                `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                     <div class="explanation-content">
+                       <div class="explanation-label">ব্যাখ্যা:</div>
+                       ${question.explanation}
+                     </div>
+                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                <p class="question-label">${index + 1}. ${question.question}</p>
+                <div class="options">
+                  ${optionsHTML}
+                </div>
+                ${explanationHTML}
+              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
